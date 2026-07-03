@@ -18,9 +18,11 @@ To host this entire distributed system for free, use the following stack:
 2. **Databases**: 
    - PostgreSQL: [Supabase](https://supabase.com/) or [Neon.tech](https://neon.tech/)
    - Redis: [Upstash](https://upstash.com/)
-3. **Compute**: [Koyeb](https://www.koyeb.com/) (API Server) & [Fly.io](https://fly.io/) (Worker)
-   - **Koyeb**: Create a new Web Service from your GitHub repo. Set the Work Directory to `server`. Pass in your `DATABASE_URL` and `REDIS_URL`. Koyeb requires zero credit cards and never sleeps!
-   - **Worker**: Since Koyeb limits free accounts to 1 service, you can run your `worker` folder on Fly.io, or simply run it locally (`cd worker && npm run dev`) connected to your remote databases for the assignment demonstration.
+3. **Compute**: [Back4App Containers](https://www.back4app.com/containers) (API & Worker combined)
+   - Back4App provides **one free Docker container** that never asks for a credit card.
+   - Simply connect your GitHub repository to a new Back4App Container app. It will automatically detect the `Dockerfile` at the root of the project.
+   - This `Dockerfile` uses a clever trick: it runs *both* the Express API Server and the Background Worker side-by-side inside the exact same free container using a background shell script (`start.sh`). This bypasses the 1-service limit!
+   - Add your `DATABASE_URL` and `REDIS_URL` to the Environmental Variables in Back4App and deploy.
 
 ## Prerequisites
 
