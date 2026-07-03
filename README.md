@@ -68,4 +68,65 @@ The seed script creates the following user:
 Once the server is running, visit [http://localhost:3000/api-docs](http://localhost:3000/api-docs) for the Swagger OpenAPI documentation.
 
 ## Architecture
-See `docs/architecture-diagram.md` and `docs/er-diagram.md` for detailed system designs.
+
+The platform is designed as a distributed, loosely-coupled system separating the API and background workers.
+
+```mermaid
+graph TD
+    Client[React SPA Client] -->|REST| API[Express API Server]
+    API --> DB[(PostgreSQL Master)]
+    API --> Cache[(Redis)]
+    
+    subgraph Background Processing
+    Worker1[Worker Process 1] -->|Polls & Locks| DB
+    Worker2[Worker Process 2] -->|Polls & Locks| DB
+    end
+    
+    Worker1 -.->|PubSub/Rate Limits| Cache
+    Worker2 -.->|PubSub/Rate Limits| Cache
+```
+
+## Database Design
+
+```mermaid
+erDiagram
+    users ||--o{ projects : creates
+    projects ||--o{ queues : contains
+    queues ||--o{ jobs : holds
+    jobs ||--o{ job_executions : logs
+    jobs ||--o| dead_letter_queue : fails_into
+    workers ||--o{ jobs : claims
+    
+    users {
+        uuid id PK
+        string email
+    }
+    projects {
+        uuid id PK
+        uuid user_id FK
+        string name
+    }
+    queues {
+        uuid id PK
+        uuid project_id FK
+        string name
+    }
+    jobs {
+        uuid id PK
+        uuid queue_id FK
+        string status
+        uuid claimed_by_worker FK
+    }
+    workers {
+        uuid id PK
+        string status
+        timestamp last_heartbeat_at
+    }
+    dead_letter_queue {
+        uuid id PK
+        uuid job_id FK
+        string error_reason
+    }
+```
+
+See `docs/design_decisions.md` for detailed system designs and architectural trade-offs.
