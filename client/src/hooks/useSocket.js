@@ -12,7 +12,13 @@ export const useSocket = () => {
     if (!user) return;
 
     const token = localStorage.getItem('token');
-    const newSocket = io({
+    
+    // Use VITE_API_URL but strip the '/api' suffix if it exists to get the root URL for WebSockets
+    const backendUrl = import.meta.env.VITE_API_URL 
+      ? import.meta.env.VITE_API_URL.replace(/\/api$/, '') 
+      : '';
+
+    const newSocket = io(backendUrl || undefined, {
       auth: { token },
       path: '/socket.io'
     });
