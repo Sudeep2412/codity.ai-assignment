@@ -11,15 +11,16 @@ A production-inspired distributed job scheduling platform capable of reliably ex
 - **Reliability**: Configurable retry strategies (fixed, linear, exponential backoff) and Dead Letter Queue (DLQ).
 - **Dashboard**: Real-time React dashboard with WebSocket updates.
 
-## 100% Free Deployment Architecture
+## 100% Free Deployment Architecture (No Credit Card Required)
 
 To host this entire distributed system for free, use the following stack:
 1. **Frontend**: [Vercel](https://vercel.com/) (Deploy the `client` directory).
 2. **Databases**: 
    - PostgreSQL: [Supabase](https://supabase.com/) or [Neon.tech](https://neon.tech/)
    - Redis: [Upstash](https://upstash.com/)
-3. **Compute**: [Render](https://render.com/)
-   - Simply connect your GitHub repository to Render and it will automatically detect the `render.yaml` Blueprint file to spin up both the API Server and the Background Worker! You just need to paste in the `DATABASE_URL` and `REDIS_URL` in the Render dashboard.
+3. **Compute**: [Koyeb](https://www.koyeb.com/) (API Server) & [Fly.io](https://fly.io/) (Worker)
+   - **Koyeb**: Create a new Web Service from your GitHub repo. Set the Work Directory to `server`. Pass in your `DATABASE_URL` and `REDIS_URL`. Koyeb requires zero credit cards and never sleeps!
+   - **Worker**: Since Koyeb limits free accounts to 1 service, you can run your `worker` folder on Fly.io, or simply run it locally (`cd worker && npm run dev`) connected to your remote databases for the assignment demonstration.
 
 ## Prerequisites
 
