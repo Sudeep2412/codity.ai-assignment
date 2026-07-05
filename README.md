@@ -11,7 +11,7 @@ A production-inspired distributed job scheduling platform capable of reliably ex
 - **Reliability**: Configurable retry strategies (fixed, linear, exponential backoff) and Dead Letter Queue (DLQ).
 - **Dashboard**: Real-time React dashboard with WebSocket updates.
 
-## 100% Free Deployment Architecture (No Credit Card Required)
+## Free Deployment Architecture 
 
 To host this entire distributed system for free, use the following stack:
 1. **Frontend**: [Vercel](https://vercel.com/) (Deploy the `client` directory).
