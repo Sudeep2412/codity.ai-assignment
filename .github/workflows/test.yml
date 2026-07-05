@@ -1,0 +1,108 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-server:
+    name: Server Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run server unit tests
+        run: npm run test --workspace=server -- --testPathIgnorePatterns="integration" --forceExit
+        env:
+          NODE_ENV: test
+
+  test-worker:
+    name: Worker Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run worker tests
+        run: npm run test --workspace=worker
+
+  test-integration:
+    name: Integration Tests (Concurrency)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: codity
+          POSTGRES_PASSWORD: codity_dev_pass
+          POSTGRES_DB: codity_jobs
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run migrations
+        run: npm run migrate --workspace=server
+        env:
+          DATABASE_URL: postgresql://codity:codity_dev_pass@localhost:5432/codity_jobs
+          NODE_ENV: development
+
+      - name: Seed test data
+        run: npm run seed --workspace=server
+        env:
+          DATABASE_URL: postgresql://codity:codity_dev_pass@localhost:5432/codity_jobs
+          NODE_ENV: development
+
+      - name: Run integration tests
+        run: npm run test --workspace=server -- --testPathPattern="integration" --forceExit
+        env:
+          DATABASE_URL: postgresql://codity:codity_dev_pass@localhost:5432/codity_jobs
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: development

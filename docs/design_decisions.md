@@ -86,3 +86,25 @@ To prevent jobs from being permanently stuck in a `running` state if a worker no
 - Workers update their `last_heartbeat_at` timestamp in the database every 10 seconds.
 - A "recovery process" routinely scans for workers whose heartbeat is older than 30 seconds.
 - Stale workers are marked `offline`, and any jobs assigned to them are atomically moved back to `queued` so another healthy worker can process them.
+
+## 4. Known Limitations & Trade-offs
+
+### Queue Concurrency Limit Race (Acknowledged)
+
+In `claimNextJob`, the per-queue concurrency check uses a `COUNT(*)` subquery:
+
+```sql
+AND (
+  SELECT COUNT(*) FROM jobs running
+  WHERE running.queue_id = q.id
+    AND running.status IN ('claimed', 'running')
+) < q.concurrency_limit
+```
+
+This count is **not** itself locked. Under extremely high contention, two transactions can both read the same count before either commits, allowing a queue to transiently exceed `concurrency_limit` by 1–2 jobs. The system self-corrects as soon as the next poll cycle runs (since the count will now exceed the limit and block further claims).
+
+**Why this trade-off was accepted:** Using a PostgreSQL Advisory Lock per queue (`pg_advisory_xact_lock(queue_id)`) would completely eliminate this race, but it would serialize all workers polling the same queue — destroying throughput under normal load to prevent a rare edge case. The current design prioritizes throughput, and the transient overshoot has no correctness impact (jobs are still executed exactly once, the queue just briefly runs one extra concurrent job).
+
+### Vercel Serverless Limitation
+
+WebSocket connections do not persist on Vercel's serverless functions (15-second timeout). The frontend gracefully degrades to HTTP polling when deployed to Vercel, which provides near-real-time updates with slightly higher latency.
