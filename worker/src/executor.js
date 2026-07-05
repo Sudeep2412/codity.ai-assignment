@@ -53,8 +53,26 @@ class Executor {
     // Pass signal to the handlers so they can cleanly abort
     switch (job.type) {
       case 'generate-report':
+        logger.info(`[Job ${job.id}] Generating report (format: ${payload.format || 'pdf'})...`);
+        await new Promise((resolve) => setTimeout(resolve, payload.duration || 3000));
+        if (signal?.aborted) throw new Error('Aborted');
+        return { reportUrl: `https://reports.codity.ai/${job.id}.${payload.format || 'pdf'}`, size: '2.4MB' };
+
       case 'send-email':
+        logger.info(`[Job ${job.id}] Sending email to ${payload.to || 'unknown@example.com'}...`);
+        await new Promise((resolve) => setTimeout(resolve, payload.duration || 1000));
+        if (signal?.aborted) throw new Error('Aborted');
+        if (payload.failProbability && Math.random() < payload.failProbability) {
+          throw new Error('SMTP connection timed out');
+        }
+        return { delivered: true, messageId: `msg_${Date.now()}` };
+
       case 'process-webhook':
+        logger.info(`[Job ${job.id}] Dispatching webhook to ${payload.url || 'unknown'}...`);
+        await new Promise((resolve) => setTimeout(resolve, payload.duration || 1500));
+        if (signal?.aborted) throw new Error('Aborted');
+        return { statusCode: 200, response: 'OK' };
+
       case 'simulation':
         return simulationHandler(payload, signal);
         

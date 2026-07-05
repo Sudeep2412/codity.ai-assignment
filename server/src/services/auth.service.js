@@ -42,6 +42,26 @@ class AuthService {
     });
   }
 
+  async refresh(refreshToken) {
+    try {
+      const decoded = jwt.verify(refreshToken, env.JWT_SECRET);
+      
+      const user = await db('users').where({ id: decoded.id }).first();
+      if (!user) {
+        throw new UnauthorizedError('User no longer exists');
+      }
+
+      return this.generateTokens({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role
+      });
+    } catch (err) {
+      throw new UnauthorizedError('Invalid or expired refresh token');
+    }
+  }
+
   generateTokens(user) {
     const accessToken = jwt.sign(
       { id: user.id, role: user.role },

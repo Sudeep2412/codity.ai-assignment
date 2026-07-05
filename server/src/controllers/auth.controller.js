@@ -29,6 +29,23 @@ exports.login = async (req, res, next) => {
     next(error);
   }
 };
+exports.refresh = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(400).json({ success: false, error: { message: 'Refresh token is required' } });
+    }
+    
+    const result = await authService.refresh(refreshToken);
+    
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 exports.me = async (req, res, next) => {
   try {
